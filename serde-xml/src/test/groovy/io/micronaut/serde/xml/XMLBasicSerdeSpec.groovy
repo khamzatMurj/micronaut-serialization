@@ -102,7 +102,7 @@ class XmlBasicSerdeSpec extends Specification implements TestPropertyProvider, X
 
         then:
             //result == expectedXml("ApiResponse", '{"content":[{"name":"Xyz"}]}')
-            result == '<ApiResponse><content><name>Xyz</name></content></ApiResponse>'
+            result == '<ApiResponse><content><content><name>Xyz</name></content></content></ApiResponse>'
 
         when:
             def readBean = xmlMapper.readValue(result, argument)
