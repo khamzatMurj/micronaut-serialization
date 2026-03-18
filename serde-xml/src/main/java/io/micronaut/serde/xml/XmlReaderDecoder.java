@@ -343,9 +343,59 @@ public class XmlReaderDecoder extends LimitingStream implements Decoder, NamingS
     }
 
     @Override
-    public @io.micronaut.core.annotation.Nullable Object decodeArbitrary() throws IOException {
-        return null;
+    public @Nullable Object decodeArbitrary() throws IOException {
+        JsonToken token = parser.currentToken();
+        return switch (token) {
+            case VALUE_STRING -> {
+                String v = parser.getString();
+                parser.nextToken();
+                yield v;
+            }
+            case VALUE_NUMBER_INT -> {
+                Number v = parser.getNumberValue();
+                parser.nextToken();
+                yield v;
+            }
+            case VALUE_NUMBER_FLOAT -> {
+                double v = parser.getDoubleValue();
+                parser.nextToken();
+                yield v;
+            }
+            case VALUE_TRUE -> {
+                parser.nextToken();
+                yield Boolean.TRUE;
+            }
+            case VALUE_FALSE -> {
+                parser.nextToken();
+                yield Boolean.FALSE;
+            }
+            case VALUE_NULL -> {
+                parser.nextToken();
+                yield null;
+            }
+            case START_OBJECT -> {
+                Decoder obj = decodeObject(Argument.OBJECT_ARGUMENT);
+                Map<String, Object> map = new LinkedHashMap<>();
+                String key;
+                while ((key = obj.decodeKey()) != null) {
+                    map.put(key, obj.decodeArbitrary());
+                }
+                obj.finishStructure();
+                yield map;
+            }
+            case START_ARRAY -> {
+                Decoder arr = decodeArray(Argument.OBJECT_ARGUMENT);
+                List<Object> list = new ArrayList<>();
+                while (arr.hasNextArrayValue()) {
+                    list.add(arr.decodeArbitrary());
+                }
+                arr.finishStructure();
+                yield list;
+            }
+            default -> throw new SerdeException("Unexpected token: " + token);
+        };
     }
+
 
     @Override
     public @io.micronaut.core.annotation.NonNull JsonNode decodeNode() throws IOException {
