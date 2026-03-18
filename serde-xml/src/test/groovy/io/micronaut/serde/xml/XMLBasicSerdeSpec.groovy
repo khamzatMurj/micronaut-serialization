@@ -474,6 +474,28 @@ class XmlBasicSerdeSpec extends Specification implements TestPropertyProvider, X
         bean.name == 'Bob'
     }
 
+    def "decodeArbitrary - Object-typed field"() {
+        given:
+            def xml = '<ArbitraryBean><name>hello</name><value>world</value></ArbitraryBean>'
+        when:
+            def obj = xmlMapper.readValue(xml, Argument.of(ArbitraryBean))
+        then:
+            obj.name  == 'hello'
+            obj.value == 'world'
+            objRepresentationMatches(obj, xml)
+    }
+
+    def "ItemsOnlyBean - List<Object> is the sole field"() {
+        given:
+        def xml = '<ItemsOnlyBean><items><items>alpha</items><items>beta</items></items></ItemsOnlyBean>'
+        when:
+        def obj = xmlMapper.readValue(xml, Argument.of(ItemsOnlyBean))
+        then:
+        obj.items instanceof List
+        obj.items == ['alpha', 'beta']
+        objRepresentationMatches(obj, xml)
+    }
+
     @Override
     Map<String, String> getProperties() {
         ["micronaut.serde.serialization.inclusion": SerdeConfig.SerInclude.ALWAYS.name()]
