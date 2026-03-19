@@ -15,6 +15,7 @@
  */
 package io.micronaut.serde.xml;
 
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.type.Argument;
 import io.micronaut.serde.Encoder;
 import io.micronaut.serde.LimitingStream;
@@ -42,16 +43,19 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
     private final ToXmlGenerator generator;
     private final XmlGeneratorEncoder parent;
     private final boolean isArray;
+    @Nullable
+    private final XmlSerdeConfiguration xmlConfiguration;
 
     private String currentKey;
     private int currentIndex;
     private final Deque<ArrayContext> arrayContext;
 
-    public XmlGeneratorEncoder(ToXmlGenerator generator, @NonNull RemainingLimits remainingLimits) {
+    public XmlGeneratorEncoder(ToXmlGenerator generator, @NonNull RemainingLimits remainingLimits, @Nullable XmlSerdeConfiguration xmlConfiguration) {
         super(remainingLimits);
         this.generator = generator;
         this.parent = null;
         this.isArray = false;
+        this.xmlConfiguration = xmlConfiguration;
         this.arrayContext = new ArrayDeque<>();
     }
 
@@ -60,6 +64,7 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
         this.generator = parent.generator;
         this.parent = parent;
         this.isArray = isArray;
+        this.xmlConfiguration = parent.xmlConfiguration;
         this.arrayContext = arrayContext;
     }
 
@@ -67,24 +72,23 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
         currentIndex++;
     }
 
-    private static boolean isGenericPlaceholder(String name) {
-        // Single-letter uppercase names like "E", "T", "K", "V" are type variable names
-        return name.length() <= 2 && name.equals(name.toUpperCase(Locale.ROOT));
-    }
 
     @Override
     public @NonNull Encoder encodeArray(@NonNull Argument<?> type) throws IOException {
         ArrayContext parentCtx = this.arrayContext.peek();
 
         // Resolve logical XML name.
-        // resolved generic arguments with synthetic names (e.g. "list12") don't leak into the
+        // wrapperType key tag set as Type instead of name
         String logicalName;
-        if (parentCtx != null && isGenericPlaceholder(type.getName())) {
-            logicalName = parentCtx.itemName().getLocalPart();
+        if (parentCtx != null) {
+
+            Argument<?> typeParameter = type.getTypeParameters()[0];
+            logicalName = xmlLocalName(typeParameter);
         } else if (this.currentKey != null) {
             logicalName = this.currentKey;
         } else {
-            logicalName = type.getName(); // type : "List<List<SomeObject E> E> vals" ==> vals
+            //logicalName = type.getTypeName(); // type : "List<List<SomeObject E> E> vals" ==> vals
+            logicalName = xmlLocalName(type);
         }
         QName qname = new QName(XMLConstants.NULL_NS_URI, logicalName);
 
@@ -145,7 +149,7 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
     @Override
     public void encodeString(@NonNull String value) throws IOException {
         ArrayContext peeked = this.arrayContext.peek();
-        // Start a wrapper element for a nested string in collections
+
         if (peeked != null && peeked.itemName() != null) {
 
             // Pass null for subsequent items so Jackson reuses the open wrapper.
@@ -228,7 +232,8 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
 
     @Override
     public void encodeNull() throws IOException {
-        generator.configure(XmlWriteFeature.WRITE_NULLS_AS_XSI_NIL, false);
+        boolean writeNullsAsXml = xmlConfiguration.getXmlWriteFeatures().get("write-nulls-as-xsi-nil");
+        generator.configure(XmlWriteFeature.WRITE_NULLS_AS_XSI_NIL, writeNullsAsXml);
         ArrayContext ctx = this.arrayContext.peek();
         if (ctx != null) {
             // Inside an array: open the wrapper element for this null item so that
@@ -286,4 +291,17 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
     ) {
 
     }
+
+    // helper method to set the Xml tag local name for wrapperType
+    private static String xmlLocalName(Argument<?> argument) throws IOException {
+        Class<?> type = argument.getType();
+        String simpleName = type.getSimpleName();
+        if (simpleName != null && !simpleName.isEmpty()) {
+            return simpleName;
+        }
+        throw new IOException(" Type unresolvable: " + argument);
+
+    }
+
+
 }

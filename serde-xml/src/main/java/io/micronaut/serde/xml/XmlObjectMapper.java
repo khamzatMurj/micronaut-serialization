@@ -36,6 +36,8 @@ import io.micronaut.serde.xml.annotation.XmlRootName;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import tools.jackson.dataformat.xml.XmlFactory;
+import tools.jackson.dataformat.xml.XmlFactoryBuilder;
+import tools.jackson.dataformat.xml.XmlReadFeature;
 import tools.jackson.dataformat.xml.XmlWriteFeature;
 import tools.jackson.dataformat.xml.deser.FromXmlParser;
 import tools.jackson.dataformat.xml.ser.ToXmlGenerator;
@@ -43,6 +45,7 @@ import tools.jackson.dataformat.xml.ser.ToXmlGenerator;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import java.io.ByteArrayOutputStream;
+import java.util.Map;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,12 +57,12 @@ import java.nio.charset.StandardCharsets;
  * utilizing XML serialization and deserialization.
  *
  * @author Mousrij Hamza
- * @since 1.0
+ *
  */
 @Singleton
 @Named("xml")
 @Internal
-public class XmlObjectMapper implements ObjectMapper {
+public final class XmlObjectMapper implements ObjectMapper {
 
     private final SerdeRegistry registry;
     private final SerdeIntrospections introspections;
@@ -68,24 +71,18 @@ public class XmlObjectMapper implements ObjectMapper {
     private final SerdeConfiguration serdeConfiguration;
     @Nullable
     private final String defaultRootName;
+    @Nullable
+    private final XmlSerdeConfiguration xmlConfiguration;
 
     public XmlObjectMapper(SerdeRegistry registry,
-            SerdeIntrospections introspections) {
-        this(registry, introspections, null, null);
-    }
-
-    public XmlObjectMapper(SerdeRegistry registry,
-            SerdeIntrospections introspections,
-            @Nullable SerdeConfiguration serdeConfiguration,
-            @Nullable XmlSerdeConfiguration xmlConfiguration) {
+                           SerdeIntrospections introspections,
+                           @Nullable SerdeConfiguration serdeConfiguration,
+                           @Nullable XmlSerdeConfiguration xmlConfiguration) {
         this.registry = registry;
         this.introspections = introspections;
         this.serdeConfiguration = serdeConfiguration;
-        // Empty XML elements are exposed as JsonToken.VALUE_NULL and Not representing the nil attributes
-        this.xmlFactory =  XmlFactory.builder()
-            .disable(XmlWriteFeature.AUTO_DETECT_XSI_TYPE)
-            .disable(XmlWriteFeature.WRITE_NULLS_AS_XSI_NIL)
-            .build();
+        this.xmlConfiguration = xmlConfiguration;
+        this.xmlFactory = XmlFactory.builder().build();
         this.defaultRootName = xmlConfiguration != null ? xmlConfiguration.getDefaultRootName() : null;
     }
 
@@ -98,7 +95,7 @@ public class XmlObjectMapper implements ObjectMapper {
     public <T> T readValue(byte @NonNull [] byteArray, @NonNull Argument<T> type) throws IOException {
         Deserializer.DecoderContext decoderContext = registry.newDecoderContext(null);
         Deserializer<? extends T> deserializer = decoderContext.findDeserializer(type).createSpecific(decoderContext,
-                type);
+            type);
         try (FromXmlParser parser = createParser(byteArray)) {
             if (parser.currentToken() == null) {
                 parser.nextToken();
@@ -116,7 +113,7 @@ public class XmlObjectMapper implements ObjectMapper {
     public <T> T readValueFromTree(@NonNull JsonNode tree, @NonNull Argument<T> type) throws IOException {
         Deserializer.DecoderContext decoderContext = registry.newDecoderContext(null);
         Deserializer<? extends T> deserializer = decoderContext.findDeserializer(type).createSpecific(decoderContext,
-                type);
+            type);
         return deserializer.deserialize(JsonNodeDecoder.create(tree, limits()), decoderContext, type);
     }
 
@@ -146,7 +143,7 @@ public class XmlObjectMapper implements ObjectMapper {
         Argument<?> type = Argument.of(object.getClass());
         try (ToXmlGenerator generator = createGenerator(outputStream)) {
             generator.setNextName(new QName(XMLConstants.NULL_NS_URI, resolveRootName(type)));
-            XmlGeneratorEncoder encoder = new XmlGeneratorEncoder(generator, limits());
+            XmlGeneratorEncoder encoder = new XmlGeneratorEncoder(generator, limits(), xmlConfiguration);
             serialize(encoder, object, type);
             generator.flush();
         }
@@ -154,7 +151,7 @@ public class XmlObjectMapper implements ObjectMapper {
 
     @Override
     public <T> void writeValue(@NonNull OutputStream outputStream, @NonNull Argument<T> type, @Nullable T object)
-            throws IOException {
+        throws IOException {
         if (object == null) {
             try (ToXmlGenerator generator = createGenerator(outputStream)) {
                 generator.writeNull();
@@ -164,7 +161,7 @@ public class XmlObjectMapper implements ObjectMapper {
         }
         try (ToXmlGenerator generator = createGenerator(outputStream)) {
             generator.setNextName(new QName(XMLConstants.NULL_NS_URI, resolveRootName(type)));
-            XmlGeneratorEncoder encoder = new XmlGeneratorEncoder(generator, limits());
+            XmlGeneratorEncoder encoder = new XmlGeneratorEncoder(generator, limits(), xmlConfiguration);
             serialize(encoder, object, type);
             generator.flush();
         }
@@ -192,8 +189,8 @@ public class XmlObjectMapper implements ObjectMapper {
     @NonNull
     private LimitingStream.RemainingLimits limits() {
         return serdeConfiguration == null
-                ? LimitingStream.DEFAULT_LIMITS
-                : LimitingStream.limitsFromConfiguration(serdeConfiguration);
+            ? LimitingStream.DEFAULT_LIMITS
+            : LimitingStream.limitsFromConfiguration(serdeConfiguration);
     }
 
     @SuppressWarnings("unchecked")
@@ -205,14 +202,14 @@ public class XmlObjectMapper implements ObjectMapper {
 
     private FromXmlParser createParser(byte[] byteArray) {
         return (FromXmlParser) xmlFactory.createParser(
-                tools.jackson.core.ObjectReadContext.empty(),
-                byteArray);
+            tools.jackson.core.ObjectReadContext.empty(),
+            byteArray);
     }
 
     private ToXmlGenerator createGenerator(OutputStream outputStream) {
         return (ToXmlGenerator) xmlFactory.createGenerator(
-                tools.jackson.core.ObjectWriteContext.empty(),
-                outputStream);
+            tools.jackson.core.ObjectWriteContext.empty(),
+            outputStream);
     }
 
     private byte[] toByteArray(InputStream inputStream) throws IOException {
