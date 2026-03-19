@@ -2,6 +2,7 @@ package io.micronaut.serde.xml;
 
 import io.micronaut.serde.annotation.Serdeable;
 import org.jspecify.annotations.Nullable;
+import java.util.List;
 
 @Serdeable
 public class ArbitraryBean {
@@ -12,11 +13,11 @@ public class ArbitraryBean {
     @Nullable
     private Object value;
 
-//    @Nullable
-//    private Object nested;
-//
-//    @Nullable
-//    private List<Object> items;
+    @Nullable
+    private Object nested;
+
+    @Nullable
+    private List<Object> items;
 
     @Nullable
     public String getName() {

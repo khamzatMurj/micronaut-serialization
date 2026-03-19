@@ -77,7 +77,7 @@ public class XmlReaderDecoder extends LimitingStream implements Decoder, NamingS
     }
 
     private XmlReaderDecoder(FromXmlParser parser, @NonNull RemainingLimits remainingLimits,
-                              boolean wrappedArray, boolean done, @Nullable String arrayElementName) {
+                             boolean wrappedArray, boolean done, @Nullable String arrayElementName) {
         super(remainingLimits);
         this.parser = parser;
         this.wrappedArray = wrappedArray;
@@ -395,7 +395,6 @@ public class XmlReaderDecoder extends LimitingStream implements Decoder, NamingS
             default -> throw new SerdeException("Unexpected token: " + token);
         };
     }
-
 
     @Override
     public @io.micronaut.core.annotation.NonNull JsonNode decodeNode() throws IOException {
