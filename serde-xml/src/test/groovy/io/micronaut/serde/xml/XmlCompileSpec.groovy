@@ -22,7 +22,7 @@ class XmlCompileSpec extends AbstractTypeElementSpec implements XmlSpec {
         ApplicationContext context = buildContext(className, source, true)
 
         setupSerdeRegistry(context)
-        xmlMapper = context.getBean(ObjectMapper, Qualifiers.byName("xml"))
+        xmlMapper = context.getBean(ObjectMapper)
 
         def t = context.classLoader.loadClass(className)
         typeUnderTest = Argument.of(t)
@@ -44,7 +44,7 @@ class XmlCompileSpec extends AbstractTypeElementSpec implements XmlSpec {
 
         setupSerdeRegistry(context)
         // Get the specific XML Mapper
-        xmlMapper = context.getBean(ObjectMapper, Qualifiers.byName("xml"))
+        xmlMapper = context.getBean(ObjectMapper)
 
         def t = context.classLoader.loadClass(className)
         typeUnderTest = Argument.of(t)
@@ -59,7 +59,7 @@ class XmlCompileSpec extends AbstractTypeElementSpec implements XmlSpec {
             def <T> BeanIntrospection<T> getSerializableIntrospection(@NonNull Argument<T> type) {
                 try {
                     return classLoader.loadClass(NameUtils.getPackageName(type.type.name) + ".\$" + type.type.simpleName + '$Introspection')
-                            .newInstance() as BeanIntrospection<T>
+                            .newInstance()
                 } catch (ClassNotFoundException e) {
                     throw new IntrospectionException("No introspection")
                 }
@@ -69,7 +69,7 @@ class XmlCompileSpec extends AbstractTypeElementSpec implements XmlSpec {
             def <T> BeanIntrospection<T> getDeserializableIntrospection(@NonNull Argument<T> type) {
                 try {
                     return classLoader.loadClass(NameUtils.getPackageName(type.type.name) + ".\$" + type.type.simpleName + '$Introspection')
-                            .newInstance() as BeanIntrospection<T>
+                            .newInstance()
                 } catch (ClassNotFoundException e) {
                     throw new IntrospectionException("No introspection for type $type")
                 }

@@ -4,6 +4,7 @@ import io.micronaut.core.type.Argument
 import io.micronaut.json.JsonMapper
 import io.micronaut.serde.DeserializerLocator
 import io.micronaut.serde.ObjectMapper
+import io.micronaut.serde.config.annotation.SerdeConfig
 import tools.jackson.databind.JsonNode
 import tools.jackson.dataformat.xml.XmlMapper
 

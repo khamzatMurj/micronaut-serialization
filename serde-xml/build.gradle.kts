@@ -21,14 +21,16 @@ dependencies {
     testAnnotationProcessor(mn.micronaut.inject.java)
     testAnnotationProcessor(projects.micronautSerdeProcessor)
 
-    testAnnotationProcessor(mn.micronaut.inject.java)
-    testAnnotationProcessor(projects.micronautSerdeProcessor)
+    testCompileOnly(mn.micronaut.inject.java)
 
     testImplementation(projects.micronautSerdeProcessor)
-    testImplementation(projects.micronautSerdeTck)
+    //testImplementation(projects.micronautSerdeTck)
     testImplementation(mn.micronaut.inject.java.test)
     testImplementation(mnTest.micronaut.test.junit5)
     testImplementation(mnTest.junit.jupiter.engine)
+    testImplementation(mnTest.micronaut.test.spock)
+    testImplementation(projects.micronautSerdeXmlTck)
+
 
 }
 

@@ -14,7 +14,7 @@ class XmlGeneratorEncoderSpec extends Specification {
     def 'currentPath'() {
         given:
 
-        def encoder = new XmlGeneratorEncoder(new XmlMapper().createGenerator(new ByteArrayOutputStream()), LimitingStream.DEFAULT_LIMITS)
+        def encoder = new XmlGeneratorEncoder(new XmlMapper().createGenerator(new ByteArrayOutputStream()), LimitingStream.DEFAULT_LIMITS, null)
         // avoiding No element/attribute name specified exception
         encoder.setNextName(new QName("", "person"));
 

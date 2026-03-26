@@ -100,6 +100,7 @@ public final class XmlObjectMapper implements ObjectMapper {
             if (parser.currentToken() == null) {
                 parser.nextToken();
             }
+            //return deserializer.deserialize(new xmlDecoder(limits(), parser), decoderContext, type);
             return deserializer.deserialize(new XmlReaderDecoder(parser, limits()), decoderContext, type);
         }
     }

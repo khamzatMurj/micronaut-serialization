@@ -23,7 +23,7 @@ import org.jspecify.annotations.NonNull;
 import tools.jackson.dataformat.xml.XmlWriteFeature;
 import tools.jackson.dataformat.xml.ser.ToXmlGenerator;
 
-import javax.xml.XMLConstants;
+
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -75,42 +75,16 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
 
     @Override
     public @NonNull Encoder encodeArray(@NonNull Argument<?> type) throws IOException {
-        ArrayContext parentCtx = this.arrayContext.peek();
-
-        // Resolve logical XML name.
-        // wrapperType key tag set as Type instead of name
-        String logicalName;
-        if (parentCtx != null) {
-
-            Argument<?> typeParameter = type.getTypeParameters()[0];
-            logicalName = xmlLocalName(typeParameter);
-        } else if (this.currentKey != null) {
-            logicalName = this.currentKey;
-        } else {
-            //logicalName = type.getTypeName(); // type : "List<List<SomeObject E> E> vals" ==> vals
-            logicalName = xmlLocalName(type);
-        }
-        QName qname = new QName(XMLConstants.NULL_NS_URI, logicalName);
-
-        if (parentCtx != null) {
-            // Opening a nested array: open wrapper element
-            QName wn = (currentIndex == 0) ? parentCtx.itemName() : null;
-            generator.startWrappedValue(wn, parentCtx.itemName());
-        }
-
-        this.arrayContext.push(new ArrayContext(qname, qname, type));
+        // NOTE: We intentionally avoid using Jackson's startWrappedValue/finishWrappedValue.
+        // Array wrapper/item naming is handled by regular field names (encodeKey) and/or
+        // the configuration done elsewhere (e.g. in the serializer and ToXmlGenerator setup).
+        this.arrayContext.push(new ArrayContext(type));
         generator.writeStartArray();
         return new XmlGeneratorEncoder(this, childLimits(), true, this.arrayContext);
     }
 
     @Override
     public @NonNull Encoder encodeObject(@NonNull Argument<?> type) throws IOException {
-        boolean insideArray = !this.arrayContext.isEmpty();
-        if (insideArray) {
-            ArrayContext ctx = this.arrayContext.peek();
-            QName wrapperName = (currentIndex == 0) ? ctx.wrapperName() : null;
-            generator.startWrappedValue(wrapperName, ctx.itemName());
-        }
         generator.writeStartObject();
         Deque<ArrayContext> contexts = new ArrayDeque<>();
         XmlGeneratorEncoder child = new XmlGeneratorEncoder(this, childLimits(), false, contexts);
@@ -123,12 +97,7 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
             () -> new IllegalStateException("Not in a structure"));
         try {
             if (isArray) {
-                ArrayContext ctx = this.arrayContext.peek();
-                if (ctx != null) {
-                    // Close the wrapper element that startWrappedValue opened
-                    generator.finishWrappedValue(ctx.wrapperName(), ctx.itemName());
-                    this.arrayContext.pop(); // pop only this level
-                }
+                this.arrayContext.pop();
                 generator.writeEndArray();
             } else {
                 generator.writeEndObject();
@@ -148,19 +117,6 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
     // XmlGeneratorEncoder.java — encodeString
     @Override
     public void encodeString(@NonNull String value) throws IOException {
-        ArrayContext peeked = this.arrayContext.peek();
-
-        if (peeked != null && peeked.itemName() != null) {
-
-            // Pass null for subsequent items so Jackson reuses the open wrapper.
-            QName wrapperName = (currentIndex == 0) ? peeked.itemName() : null;
-            QName wrappedName = peeked.itemName();
-            // Convention wrapped name same as wrapper name
-            generator.startWrappedValue(
-                wrapperName,
-                wrappedName
-            );
-        }
         generator.writeString(value);
         postEncodeValue();
     }
@@ -233,18 +189,8 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
     @Override
     public void encodeNull() throws IOException {
         boolean writeNullsAsXml = xmlConfiguration.getXmlWriteFeatures().get("write-nulls-as-xsi-nil");
-        generator.configure(XmlWriteFeature.WRITE_NULLS_AS_XSI_NIL, writeNullsAsXml);
-        ArrayContext ctx = this.arrayContext.peek();
-        if (ctx != null) {
-            // Inside an array: open the wrapper element for this null item so that
-            // finishStructure's finishWrappedValue has a matching open element.
-            QName wn = (currentIndex == 0) ? ctx.itemName() : null;
-            generator.startWrappedValue(wn, ctx.itemName());
-        }
+        //generator.configure(XmlWriteFeature.WRITE_NULLS_AS_XSI_NIL, writeNullsAsXml);
         generator.writeNull();
-        if (ctx != null) {
-            generator.finishWrappedValue(null, ctx.itemName());
-        }
         postEncodeValue();
     }
 
@@ -285,23 +231,9 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
     }
 
     private record ArrayContext(
-        QName wrapperName,    // passed as first arg to startWrappedValue / finishWrappedValue
-        QName itemName,       // passed as second arg (per-element tag)
         Argument<?> elementType
     ) {
 
     }
-
-    // helper method to set the Xml tag local name for wrapperType
-    private static String xmlLocalName(Argument<?> argument) throws IOException {
-        Class<?> type = argument.getType();
-        String simpleName = type.getSimpleName();
-        if (simpleName != null && !simpleName.isEmpty()) {
-            return simpleName;
-        }
-        throw new IOException(" Type unresolvable: " + argument);
-
-    }
-
 
 }
