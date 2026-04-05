@@ -218,6 +218,10 @@ public @interface SerdeConfig {
 
     String SOURCEGEN_DESERIALIZER_CLASS = "sourcegenDeserializerClass";
 
+    String XML_FIELD_WRAPPER = "xmlFieldWrapper";
+
+    String XML_USE_WRAPPING = "xmlUseWrapping";
+
     /**
      * Internal metadata type for wrapped settings.
      */

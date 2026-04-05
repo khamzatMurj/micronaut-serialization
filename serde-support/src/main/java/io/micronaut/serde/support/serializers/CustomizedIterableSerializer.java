@@ -19,6 +19,7 @@ import io.micronaut.core.annotation.Internal;
 import io.micronaut.core.type.Argument;
 import io.micronaut.serde.Encoder;
 import io.micronaut.serde.Serializer;
+import io.micronaut.serde.config.annotation.SerdeConfig;
 import io.micronaut.serde.exceptions.SerdeException;
 import io.micronaut.serde.exceptions.path.ReferencePath;
 
@@ -47,12 +48,25 @@ final class CustomizedIterableSerializer<T> implements Serializer<Iterable<T>> {
     public void serialize(Encoder encoder, EncoderContext context, Argument<? extends Iterable<T>> type, Iterable<T> value)
         throws IOException {
         int index = 0;
+//
+//        Boolean useWrapping = type.getAnnotationMetadata().booleanValue(SerdeConfig.class, SerdeConfig.XML_USE_WRAPPING).orElse(true);
+//        String wrapper = type.getAnnotationMetadata().stringValue(SerdeConfig.class, SerdeConfig.XML_FIELD_WRAPPER).orElse(null);
+//
+//        System.out.println("useWrapping: " + useWrapping);
+//        System.out.println("wrapper: " + wrapper);
+//
+//        if (wrapper != null && useWrapping) {
+//            System.out.println("=== start Qname : ===" );
+//            encoder.startWrappedValue(type, wrapper);
+//        }
+        System.out.println("custom : " + type.getTargetAnnotationMetadata());
         try (Encoder array = encoder.encodeArray(type)) {
             for (T t : value) {
                 try {
                     if (t == null) {
                         array.encodeNull();
                     } else {
+                        System.out.println("Herrre");
                         componentSerializer.serialize(array, context, generic, t);
                     }
                     index++;
@@ -61,6 +75,12 @@ final class CustomizedIterableSerializer<T> implements Serializer<Iterable<T>> {
                     throw e;
                 }
             }
+        }
+
+        finally {
+//            if (wrapper != null && useWrapping) {
+//                encoder.finishWrappedValue(type, wrapper);
+//            }
         }
     }
 

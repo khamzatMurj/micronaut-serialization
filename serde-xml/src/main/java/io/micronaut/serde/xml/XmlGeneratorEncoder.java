@@ -19,18 +19,16 @@ import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.type.Argument;
 import io.micronaut.serde.Encoder;
 import io.micronaut.serde.LimitingStream;
+import io.micronaut.serde.config.annotation.SerdeConfig;
 import org.jspecify.annotations.NonNull;
-import tools.jackson.dataformat.xml.XmlWriteFeature;
 import tools.jackson.dataformat.xml.ser.ToXmlGenerator;
 
-
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -48,7 +46,7 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
 
     private String currentKey;
     private int currentIndex;
-    private final Deque<ArrayContext> arrayContext;
+
 
     public XmlGeneratorEncoder(ToXmlGenerator generator, @NonNull RemainingLimits remainingLimits, @Nullable XmlSerdeConfiguration xmlConfiguration) {
         super(remainingLimits);
@@ -56,16 +54,15 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
         this.parent = null;
         this.isArray = false;
         this.xmlConfiguration = xmlConfiguration;
-        this.arrayContext = new ArrayDeque<>();
     }
 
-    public XmlGeneratorEncoder(XmlGeneratorEncoder parent, @NonNull RemainingLimits remainingLimits, boolean isArray, Deque<ArrayContext> arrayContext) {
+    public XmlGeneratorEncoder(XmlGeneratorEncoder parent, @NonNull RemainingLimits remainingLimits, boolean isArray) {
         super(remainingLimits);
         this.generator = parent.generator;
         this.parent = parent;
         this.isArray = isArray;
         this.xmlConfiguration = parent.xmlConfiguration;
-        this.arrayContext = arrayContext;
+
     }
 
     private void postEncodeValue() {
@@ -75,19 +72,63 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
 
     @Override
     public @NonNull Encoder encodeArray(@NonNull Argument<?> type) throws IOException {
-        // NOTE: We intentionally avoid using Jackson's startWrappedValue/finishWrappedValue.
-        // Array wrapper/item naming is handled by regular field names (encodeKey) and/or
-        // the configuration done elsewhere (e.g. in the serializer and ToXmlGenerator setup).
-        this.arrayContext.push(new ArrayContext(type));
         generator.writeStartArray();
-        return new XmlGeneratorEncoder(this, childLimits(), true, this.arrayContext);
+        System.out.println("Encoding array start");
+        System.out.println(type.getAnnotationMetadata().getAnnotationNames());
+        System.out.println(type.getAnnotationMetadata().stringValue(SerdeConfig.class, SerdeConfig.XML_FIELD_WRAPPER).orElse(null));
+        return new XmlGeneratorEncoder(this, childLimits(), true);
     }
+
+
+
+
+    @Override
+    public void startWrappedValue(Argument<?> type, String wrapper) throws IOException {
+        if (type != null){
+            if (Map.class.isAssignableFrom(type.getType())) {
+                return;
+            }
+            if (wrapper != null) {
+                System.out.println("encoder wrapper ; " + wrapper);
+                generator.startWrappedValue(new QName(type.getName()),
+                    new QName(
+                        XMLConstants.NULL_NS_URI,
+                        wrapper,
+                        XMLConstants.DEFAULT_NS_PREFIX));
+            }
+        } else {
+            generator.startWrappedValue(null,
+                new QName(
+                    XMLConstants.NULL_NS_URI,
+                    wrapper,
+                    XMLConstants.NULL_NS_URI));
+        }
+    }
+
+    @Override
+    public void finishWrappedValue(Argument<?> type, @Nullable String wrapper) throws IOException {
+        if  (type != null){
+            if (Map.class.isAssignableFrom(type.getType())) {
+                return;
+            }
+            if (wrapper != null) {
+                generator.finishWrappedValue(new QName(type.getName()), new QName(wrapper));
+            }
+        }  else {
+            generator.finishWrappedValue(null,
+                new QName(
+                    XMLConstants.NULL_NS_URI,
+                    wrapper,
+                    XMLConstants.NULL_NS_URI));
+        }
+
+    }
+
 
     @Override
     public @NonNull Encoder encodeObject(@NonNull Argument<?> type) throws IOException {
         generator.writeStartObject();
-        Deque<ArrayContext> contexts = new ArrayDeque<>();
-        XmlGeneratorEncoder child = new XmlGeneratorEncoder(this, childLimits(), false, contexts);
+        XmlGeneratorEncoder child = new XmlGeneratorEncoder(this, childLimits(), false);
         return child;
     }
 
@@ -97,8 +138,8 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
             () -> new IllegalStateException("Not in a structure"));
         try {
             if (isArray) {
-                this.arrayContext.pop();
                 generator.writeEndArray();
+                //generator.finishWrappedValue(new QName("AA"), new QName("item"));
             } else {
                 generator.writeEndObject();
             }
@@ -194,46 +235,5 @@ public final class XmlGeneratorEncoder extends LimitingStream implements Encoder
         postEncodeValue();
     }
 
-    @Override
-    public @NonNull String currentPath() {
-        StringBuilder builder = new StringBuilder();
-        XmlGeneratorEncoder enc = this;
-        while (enc != null) {
-            if (enc != this) {
-                builder.insert(0, "->");
-            }
-            if (enc.currentKey == null) {
-                if (enc.parent != null) {
-                    builder.insert(0, enc.currentIndex);
-                }
-            } else {
-                builder.insert(0, enc.currentKey);
-            }
-            enc = enc.parent;
-        }
-        return builder.toString();
-    }
-
-    public ToXmlGenerator getGenerator() {
-        return generator;
-    }
-
-    public void setNextIsAttribute(boolean isAttribute) {
-        generator.setNextIsAttribute(isAttribute);
-    }
-
-    public void setNextIsCData(boolean isCData) {
-        generator.setNextIsCData(isCData);
-    }
-
-    public void setNextName(QName name) {
-        generator.setNextName(name);
-    }
-
-    private record ArrayContext(
-        Argument<?> elementType
-    ) {
-
-    }
 
 }

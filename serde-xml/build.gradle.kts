@@ -14,6 +14,7 @@ dependencies {
     api(mn.micronaut.context)
     api(projects.micronautSerdeApi)
 
+    //api
     implementation(projects.micronautSerdeSupport)
 
     implementation(mn.jackson.dataformat.xml)

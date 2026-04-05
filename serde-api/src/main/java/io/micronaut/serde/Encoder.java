@@ -15,6 +15,7 @@
  */
 package io.micronaut.serde;
 
+import io.micronaut.core.annotation.Nullable;
 import org.jspecify.annotations.NonNull;
 import io.micronaut.core.type.Argument;
 import io.micronaut.serde.util.BinaryCodecUtil;
@@ -172,4 +173,12 @@ public interface Encoder extends AutoCloseable {
     default @NonNull String currentPath() {
         return "";
     }
+
+    default void startWrappedValue(@Nullable Argument<?> type, @Nullable String wrapper) throws IOException {
+
+    }
+
+    default void finishWrappedValue(@Nullable Argument<?> type, @Nullable String wrapper) throws IOException {
+    }
+
 }

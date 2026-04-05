@@ -27,9 +27,11 @@ import io.micronaut.serde.exceptions.SerdeException;
 import io.micronaut.serde.reference.PropertyReference;
 import io.micronaut.serde.reference.SerializationReference;
 
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Fallback {@link Serializer} for general {@link Object} values. For deserialization, deserializes to
@@ -62,9 +64,13 @@ final class CustomizedObjectSerializer<T> implements ObjectSerializer<T> {
 
     @Override
     public void serializeInto(Encoder encoder, EncoderContext context, Argument<? extends T> type, T value) throws IOException {
+        // properties
         for (SerBean.SerProperty<T, Object> property : serBean.writeProperties) {
+            System.out.println("pp==>:" + serBean.introspection.getAnnotationMetadata().getDeclaredAnnotationNames());
+            System.out.println(SerdeConfig.XML_FIELD_WRAPPER);
             try {
                 final Object propertyValue = property.get(value);
+                //System.out.println("property value : "+propertyValue);
                 final String backRef = property.backRef;
                 if (backRef != null) {
                     final PropertyReference<T, Object> ref = context.resolveReference(
@@ -119,6 +125,22 @@ final class CustomizedObjectSerializer<T> implements ObjectSerializer<T> {
                         )
                     );
                 }
+
+                System.out.println("Customizeed========================");
+//                String wrapper = property.argument.getAnnotationMetadata().getDeclaredAnnotationNames().toString();
+//                System.out.println("custom object serializer: " + wrapper);
+
+//                Boolean useWrapping = property.annotationMetadata
+//                    .booleanValue(SerdeConfig.class, SerdeConfig.XML_USE_WRAPPING)
+//                    .orElse(null);
+//
+//                String wrapper = property.annotationMetadata
+//                    .stringValue(SerdeConfig.class, SerdeConfig.XML_FIELD_WRAPPER)
+//                    .orElse(null);
+
+//                boolean xmlWrapperPresent = property.annotationMetadata
+//                    .isDeclaredAnnotationPresent("tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper");
+
                 try {
                     if (property.serializableInto) {
                         if (property.objectSerializer != null) {
@@ -129,6 +151,24 @@ final class CustomizedObjectSerializer<T> implements ObjectSerializer<T> {
                             throw new SerdeException("Serializer for a property: " + property.name + " doesn't support serializing into an existing object");
                         }
                     } else {
+
+//                        if (!xmlWrapperPresent || useWrapping != null) {
+//                            if (Boolean.TRUE.equals(useWrapping)) {
+//                                // private X field;
+//                                // <field><field>X</field><field>
+//                                // I get :
+//                                // type + value + property
+//                                //
+//                                encoder.startWrappedValue(Argument.of(Object.class, wrapper), wrapper);
+//
+//                            } else if (Boolean.FALSE.equals(useWrapping)) {
+//                                System.out.println("No wrap");
+//                                //skip
+//                            }
+//                        }
+
+                        //jackson 3 by default wrapping
+
                         encoder.encodeKey(property.name);
                         if (propertyValue == null) {
                             encoder.encodeNull();
@@ -140,6 +180,19 @@ final class CustomizedObjectSerializer<T> implements ObjectSerializer<T> {
                     if (managedRef != null) {
                         context.popManagedRef();
                     }
+
+//                    if (!xmlWrapperPresent || useWrapping != null) {
+//                        if (Boolean.TRUE.equals(useWrapping)) {
+//                            System.out.println("YES");
+//                            // private X field;
+//                            // <field><field>X</field><field>
+//                            // I get :
+//                            // type + value + property
+//                            //
+//                            encoder.startWrappedValue(Argument.of(Object.class, wrapper), wrapper);
+//
+//                        }
+//                    }
                 }
             } catch (SerdeException e) {
                 e.getPath().add(property.getReferencePath());
