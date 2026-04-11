@@ -1,19 +1,15 @@
-package io.micronaut.serde.xml
+package io.micronaut.serde.xml.tck
 
 import io.micronaut.core.type.Argument
 import io.micronaut.json.JsonMapper
-import io.micronaut.serde.DeserializerLocator
-import io.micronaut.serde.ObjectMapper
-import io.micronaut.serde.config.annotation.SerdeConfig
 import tools.jackson.databind.JsonNode
-import tools.jackson.dataformat.xml.XmlMapper
 
 import java.nio.charset.StandardCharsets
 
 trait XmlSpec {
 
 
-    abstract XmlObjectMapper getXmlMapper()
+    abstract JsonMapper getXmlMapper()
 
 
     String writeXml(Object bean) {

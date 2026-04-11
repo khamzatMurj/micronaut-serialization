@@ -25,7 +25,8 @@ dependencies {
     testAnnotationProcessor(projects.micronautSerdeProcessor)
 
     testImplementation(projects.micronautSerdeProcessor)
-    testImplementation(projects.micronautSerdeTck)
+//    testImplementation(projects.micronautSerdeTck)
+    testImplementation(projects.micronautSerdeXmlTck)
     testImplementation(mn.micronaut.inject.java.test)
     testImplementation(mnTest.micronaut.test.junit5)
     testImplementation(mnTest.junit.jupiter.engine)

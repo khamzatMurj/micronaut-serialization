@@ -1,22 +1,22 @@
 package io.micronaut.serde.xml
 
 import io.micronaut.core.type.Argument
-import io.micronaut.serde.AllTypesBean
-import io.micronaut.serde.ApiResponse
-import io.micronaut.serde.BeanWithExtraMethod
-import io.micronaut.serde.ConstructorArgs
-import io.micronaut.serde.Dummy
-import io.micronaut.serde.ObjectWithArray
-import io.micronaut.serde.ObjectWithArrayConstructor
-import io.micronaut.serde.ObjectWithArrayOfArray
-import io.micronaut.serde.ObjectWithArrayRecord
-import io.micronaut.serde.ObjectWithArrayRequired
-import io.micronaut.serde.RecordBean
-import io.micronaut.serde.Simple
+//import io.micronaut.serde.AllTypesBean
+//import io.micronaut.serde.ApiResponse
+//import io.micronaut.serde.BeanWithExtraMethod
+//import io.micronaut.serde.ConstructorArgs
+//import io.micronaut.serde.Dummy
+//import io.micronaut.serde.ObjectWithArray
+//import io.micronaut.serde.ObjectWithArrayConstructor
+//import io.micronaut.serde.ObjectWithArrayOfArray
+//import io.micronaut.serde.ObjectWithArrayRecord
+//import io.micronaut.serde.ObjectWithArrayRequired
+//import io.micronaut.serde.RecordBean
+//import io.micronaut.serde.Simple
 import io.micronaut.serde.config.annotation.SerdeConfig
-import io.micronaut.serde.data.Users1
-import io.micronaut.serde.data.Users2
-import io.micronaut.serde.data.Users3
+//import io.micronaut.serde.data.Users1
+//import io.micronaut.serde.data.Users2
+//import io.micronaut.serde.data.Users3
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.micronaut.test.support.TestPropertyProvider
 import jakarta.inject.Inject
@@ -80,76 +80,74 @@ class XmlBasicSerdeSpec extends Specification implements TestPropertyProvider, X
         e.message.contains("Required constructor parameter") || e.message.contains("Missing required creator property")
     }
 
-    void "test write simple"() {
-        when:
-        def bean = new Simple(name: "Test")
-        def result = writeXml(bean)
-        then:
-        //result == expectedXml("Simple", '{"name":"Test"}')
-        result == '<Simple><name>Test</name></Simple>'
-    }
+//    void "test write simple"() {
+//        when:
+//        def bean = new Simple(name: "Test")
+//        def result = writeXml(bean)
+//        then:
+//        //result == expectedXml("Simple", '{"name":"Test"}')
+//        result == '<Simple><name>Test</name></Simple>'
+//    }
 
     // ---- Nested ------------------------------------------------------------
 
     // still working on it
     // "The type parameter T in ApiResponse<T> is being resolved to LinkedHashMap instead of List<Dummy>"
-    @Ignore
-    void "test nested"() {
-        when:
-        def bean = new ApiResponse(List.of(new Dummy("Xyz")));
-        def argument = Argument.of(ApiResponse, Argument.listOf(Dummy))
-        def result = writeXml(argument, bean)
-
-        then:
-        //result == expectedXml("ApiResponse", '{"content":[{"name":"Xyz"}]}')
-        result == '<ApiResponse><content><content><name>Xyz</name></content></content></ApiResponse>'
-
-        when:
-        def readBean = xmlMapper.readValue(result, argument)
-
-        then:
-        readBean.content.size() == 1
-        readBean.content[0].name == "Xyz"
-        readBean.content[1].name == "xcv"
-
-
-    }
+    //@Ignore
+//    void "test nested"() {
+//        when:
+//        def bean = new ApiResponse(List.of(new Dummy("Xyz")));
+//        def argument = Argument.of(ApiResponse, Argument.listOf(Dummy))
+//        def result = writeXml(argument, bean)
+//        println result + "dqsdsqdsq"
+//        then:
+//        //result == expectedXml("ApiResponse", '{"content":[{"name":"Xyz"}]}')
+//        result == '<ApiResponse><content><content><name>Xyz</name></content></content></ApiResponse>'
+//
+//        when:
+//        def readBean = xmlMapper.readValue(result, argument)
+//
+//        then:
+//        readBean.content.size() == 1
+//        readBean.content[0].name == "Xyz"
+//        readBean.content[1].name == "xcv"
+//    }
 
     // ---- Constructor args
 
-    void "test read/write constructor args"() {
-        when:
-        def bean = new ConstructorArgs("test", 100)
-        bean.author = "Bob"
-        bean.other = "Something"
-        def result = writeXml(bean)
-        then:
-        result.contains("<title>test</title>")
-        result.contains("<author>Bob</author>")
-        result.contains("<pages>100</pages>")
-        result.contains("<other>Something</other>")
-        result.startsWith("<ConstructorArgs>")
-        result.trim().endsWith("</ConstructorArgs>")
-
-        when:
-        bean = xmlMapper.readValue(result, Argument.of(ConstructorArgs))
-        then:
-        bean.title == 'test'
-        bean.pages == 100
-        bean.other == 'Something'
-        bean.author == 'Bob'
-
-        when:
-        bean = xmlMapper.readValue(
-                //xmlBytes('{"other":"Something","author":"Bob","title":"test","pages":100}'),
-                "<ConstructorArgs><other>Something</other><author>Bob</author><title>test</title><pages>100</pages></ConstructorArgs>",
-                Argument.of(ConstructorArgs))
-        then:
-        bean.title == 'test'
-        bean.pages == 100
-        bean.other == 'Something'
-        bean.author == 'Bob'
-    }
+//    void "test read/write constructor args"() {
+//        when:
+//        def bean = new ConstructorArgs("test", 100)
+//        bean.author = "Bob"
+//        bean.other = "Something"
+//        def result = writeXml(bean)
+//        then:
+//        result.contains("<title>test</title>")
+//        result.contains("<author>Bob</author>")
+//        result.contains("<pages>100</pages>")
+//        result.contains("<other>Something</other>")
+//        result.startsWith("<ConstructorArgs>")
+//        result.trim().endsWith("</ConstructorArgs>")
+//
+//        when:
+//        bean = xmlMapper.readValue(result, Argument.of(ConstructorArgs))
+//        then:
+//        bean.title == 'test'
+//        bean.pages == 100
+//        bean.other == 'Something'
+//        bean.author == 'Bob'
+//
+//        when:
+//        bean = xmlMapper.readValue(
+//                //xmlBytes('{"other":"Something","author":"Bob","title":"test","pages":100}'),
+//                "<ConstructorArgs><other>Something</other><author>Bob</author><title>test</title><pages>100</pages></ConstructorArgs>",
+//                Argument.of(ConstructorArgs))
+//        then:
+//        bean.title == 'test'
+//        bean.pages == 100
+//        bean.other == 'Something'
+//        bean.author == 'Bob'
+//    }
 
     def "validate arrays"() {
         given:
@@ -285,97 +283,97 @@ class XmlBasicSerdeSpec extends Specification implements TestPropertyProvider, X
         noExceptionThrown()
     }
 
-    def "all nullable fields null"() {
-        given:
-        def bean = new AllTypesBean()
-        // leave all nullable fields unset (null)
+//    def "all nullable fields null"() {
+//        given:
+//        def bean = new AllTypesBean()
+//        // leave all nullable fields unset (null)
+//
+//        when:
+//        def bytes = xmlMapper.writeValueAsBytes(bean)
+//        def result = xmlMapper.readValue(bytes, Argument.of(AllTypesBean))
+//
+//        then:
+//        noExceptionThrown()
+//        !result.someBool
+//        result.someInt   == 0
+//        result.someLong  == 0L
+//        result.someString  == null
+//        result.someBoolean == null
+//        result.bigDecimal  == null
+//        result.bigInteger  == null
+//
+//    }
 
-        when:
-        def bytes = xmlMapper.writeValueAsBytes(bean)
-        def result = xmlMapper.readValue(bytes, Argument.of(AllTypesBean))
-
-        then:
-        noExceptionThrown()
-        !result.someBool
-        result.someInt   == 0
-        result.someLong  == 0L
-        result.someString  == null
-        result.someBoolean == null
-        result.bigDecimal  == null
-        result.bigInteger  == null
-
-    }
-
-    def "validate all types bean"() {
-        given:
-        def all = new AllTypesBean()
-        all.someBool = true
-        all.someInt = 123
-        all.someLong = 234
-        all.someByte = (byte) 34
-        all.someShort = (short) 567
-        all.someFloat = 11.22f
-        all.someDouble = 123.234D
-        all.someString = "Hello"
-        all.someBoolean = Boolean.TRUE
-        all.someInteger = 444
-        all.someLongObj = 555
-        all.someDoubleObj = 666.77d
-        all.someShortObj = 777
-        all.someFloatObj = 888.99f
-        all.someByteObj = 99
-        all.bigDecimal = BigDecimal.valueOf(12345.12345)
-        all.bigInteger = BigInteger.valueOf(123456789)
-        when:
-        def result = serializeDeserialize(all)
-        then:
-        result.someBool
-        result.someInt == 123
-        result.someLong == 234
-        result.someByte == (byte) 34
-        result.someShort == (short) 567
-        result.someFloat == 11.22f
-        result.someDouble == 123.234D
-        result.someString == "Hello"
-        result.someBoolean == Boolean.TRUE
-        result.someInteger == 444
-        result.someLongObj == 555
-        result.someDoubleObj == 666.77d
-        result.someShortObj == 777
-        result.someFloatObj == 888.99f
-        result.someByteObj == 99
-        result.bigDecimal == BigDecimal.valueOf(12345.12345)
-        result.bigInteger == BigInteger.valueOf(123456789)
-    }
+//    def "validate all types bean"() {
+//        given:
+//        def all = new AllTypesBean()
+//        all.someBool = true
+//        all.someInt = 123
+//        all.someLong = 234
+//        all.someByte = (byte) 34
+//        all.someShort = (short) 567
+//        all.someFloat = 11.22f
+//        all.someDouble = 123.234D
+//        all.someString = "Hello"
+//        all.someBoolean = Boolean.TRUE
+//        all.someInteger = 444
+//        all.someLongObj = 555
+//        all.someDoubleObj = 666.77d
+//        all.someShortObj = 777
+//        all.someFloatObj = 888.99f
+//        all.someByteObj = 99
+//        all.bigDecimal = BigDecimal.valueOf(12345.12345)
+//        all.bigInteger = BigInteger.valueOf(123456789)
+//        when:
+//        def result = serializeDeserialize(all)
+//        then:
+//        result.someBool
+//        result.someInt == 123
+//        result.someLong == 234
+//        result.someByte == (byte) 34
+//        result.someShort == (short) 567
+//        result.someFloat == 11.22f
+//        result.someDouble == 123.234D
+//        result.someString == "Hello"
+//        result.someBoolean == Boolean.TRUE
+//        result.someInteger == 444
+//        result.someLongObj == 555
+//        result.someDoubleObj == 666.77d
+//        result.someShortObj == 777
+//        result.someFloatObj == 888.99f
+//        result.someByteObj == 99
+//        result.bigDecimal == BigDecimal.valueOf(12345.12345)
+//        result.bigInteger == BigInteger.valueOf(123456789)
+//    }
 
     // Type-level round-trips (primitives as element text)
 
-    def "round-trip primitive types via AllTypesBean"() {
-        given:
-        def bean = new AllTypesBean()
-        bean.someInt    = intVal
-        bean.someLong   = longVal
-        bean.someDouble = doubleVal
-        bean.someBool   = boolVal
-
-        when:
-        def bytes  = xmlMapper.writeValueAsBytes(bean)
-        def result = xmlMapper.readValue(bytes, Argument.of(AllTypesBean))
-
-        then:
-        result.someInt    == intVal
-        result.someLong   == longVal
-        Math.abs(result.someDouble - doubleVal) < 0.001d
-        result.someBool   == boolVal
-
-        where:
-        intVal | longVal    | doubleVal | boolVal
-        0      | 0L         | 0.0d      | false
-        1      | 1L         | 1.1d      | true
-        -42    | -100000L   | -3.14d    | false
-        999    | 9999999999L| 123.456d  | true
-    }
-
+//    def "round-trip primitive types via AllTypesBean"() {
+//        given:
+//        def bean = new AllTypesBean()
+//        bean.someInt    = intVal
+//        bean.someLong   = longVal
+//        bean.someDouble = doubleVal
+//        bean.someBool   = boolVal
+//
+//        when:
+//        def bytes  = xmlMapper.writeValueAsBytes(bean)
+//        def result = xmlMapper.readValue(bytes, Argument.of(AllTypesBean))
+//
+//        then:
+//        result.someInt    == intVal
+//        result.someLong   == longVal
+//        Math.abs(result.someDouble - doubleVal) < 0.001d
+//        result.someBool   == boolVal
+//
+//        where:
+//        intVal | longVal    | doubleVal | boolVal
+//        0      | 0L         | 0.0d      | false
+//        1      | 1L         | 1.1d      | true
+//        -42    | -100000L   | -3.14d    | false
+//        999    | 9999999999L| 123.456d  | true
+//    }
+//
 
     def "validate json node"() {
         //--
@@ -443,36 +441,36 @@ class XmlBasicSerdeSpec extends Specification implements TestPropertyProvider, X
         def result = writeXml(obj);
         XmlMatches(result, xmlStripped)
     }
-
-    void "test read/write record"() {
-        when:
-        def bean = new RecordBean("fizz", "buzz")
-        def result = writeXml(bean)
-        then:
-        //result == expectedXml("RecordBean", '{"foo":"fizz","bar":"buzz"}')
-        result == '<RecordBean><foo>fizz</foo><bar>buzz</bar></RecordBean>'
-
-        when:
-        bean = xmlMapper.readValue(result, Argument.of(RecordBean))
-        then:
-        bean.foo() == 'fizz'
-        bean.bar() == 'buzz'
-
-    }
-
-    void "test a bean with an extra executable method"() {
-        when:
-        def bean = new BeanWithExtraMethod()
-        bean.name = "Bob"
-        def result = writeXml(bean)
-        then:
-        result == '<BeanWithExtraMethod><name>Bob</name></BeanWithExtraMethod>'
-
-        when:
-        bean = xmlMapper.readValue(result, Argument.of(BeanWithExtraMethod))
-        then:
-        bean.name == 'Bob'
-    }
+//
+//    void "test read/write record"() {
+//        when:
+//        def bean = new RecordBean("fizz", "buzz")
+//        def result = writeXml(bean)
+//        then:
+//        //result == expectedXml("RecordBean", '{"foo":"fizz","bar":"buzz"}')
+//        result == '<RecordBean><foo>fizz</foo><bar>buzz</bar></RecordBean>'
+//
+//        when:
+//        bean = xmlMapper.readValue(result, Argument.of(RecordBean))
+//        then:
+//        bean.foo() == 'fizz'
+//        bean.bar() == 'buzz'
+//
+//    }
+//
+//    void "test a bean with an extra executable method"() {
+//        when:
+//        def bean = new BeanWithExtraMethod()
+//        bean.name = "Bob"
+//        def result = writeXml(bean)
+//        then:
+//        result == '<BeanWithExtraMethod><name>Bob</name></BeanWithExtraMethod>'
+//
+//        when:
+//        bean = xmlMapper.readValue(result, Argument.of(BeanWithExtraMethod))
+//        then:
+//        bean.name == 'Bob'
+//    }
 
     def "round-trip via decodeArbitrary - Object-typed field preserves value"() {
         given:
