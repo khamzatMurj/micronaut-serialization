@@ -36,16 +36,13 @@ import io.micronaut.serde.xml.annotation.XmlRootName;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import tools.jackson.dataformat.xml.XmlFactory;
-import tools.jackson.dataformat.xml.XmlFactoryBuilder;
-import tools.jackson.dataformat.xml.XmlReadFeature;
-import tools.jackson.dataformat.xml.XmlWriteFeature;
 import tools.jackson.dataformat.xml.deser.FromXmlParser;
 import tools.jackson.dataformat.xml.ser.ToXmlGenerator;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.stream.*;
 import java.io.ByteArrayOutputStream;
-import java.util.Map;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -74,6 +71,13 @@ public final class XmlObjectMapper implements ObjectMapper {
     @Nullable
     private final XmlSerdeConfiguration xmlConfiguration;
 
+    @NonNull
+    XMLOutputFactory xmlOutputFactory;
+    @NonNull
+    XMLInputFactory xmlInputFactory;
+
+
+
     public XmlObjectMapper(SerdeRegistry registry,
                            SerdeIntrospections introspections,
                            @Nullable SerdeConfiguration serdeConfiguration,
@@ -84,6 +88,8 @@ public final class XmlObjectMapper implements ObjectMapper {
         this.xmlConfiguration = xmlConfiguration;
         this.xmlFactory = XmlFactory.builder().build();
         this.defaultRootName = xmlConfiguration != null ? xmlConfiguration.getDefaultRootName() : null;
+        this.xmlOutputFactory = XMLOutputFactory.newInstance();
+        this.xmlInputFactory = XMLInputFactory.newInstance();
     }
 
     @Override
@@ -141,29 +147,36 @@ public final class XmlObjectMapper implements ObjectMapper {
             return;
         }
         Argument<?> type = Argument.of(object.getClass());
-        try (ToXmlGenerator generator = createGenerator(outputStream)) {
-            generator.setNextName(new QName(XMLConstants.NULL_NS_URI, resolveRootName(type)));
-            XmlGeneratorEncoder encoder = new XmlGeneratorEncoder(generator, limits(), xmlConfiguration);
+        XMLStreamWriter xmlWriter = null;
+        try {
+            xmlWriter = xmlOutputFactory.createXMLStreamWriter(outputStream);
+            XmlGenerator encoder = new XmlGenerator(xmlWriter);
             serialize(encoder, object, type);
-            generator.flush();
+            xmlWriter.close();
+        } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public <T> void writeValue(@NonNull OutputStream outputStream, @NonNull Argument<T> type, @Nullable T object)
-        throws IOException {
-        if (object == null) {
-            try (ToXmlGenerator generator = createGenerator(outputStream)) {
-                generator.writeNull();
-                generator.flush();
-            }
-            return;
-        }
-        try (ToXmlGenerator generator = createGenerator(outputStream)) {
-            generator.setNextName(new QName(XMLConstants.NULL_NS_URI, resolveRootName(type)));
-            XmlGeneratorEncoder encoder = new XmlGeneratorEncoder(generator, limits(), xmlConfiguration);
+        throws IOException{
+//        if (object == null) {
+//            try (ToXmlGenerator generator = createGenerator(outputStream)) {
+//                generator.writeNull();
+//                generator.flush();
+//            }
+//            return;
+//        }
+        // handling null object
+        XMLStreamWriter xmlWriter = null;
+        try {
+            xmlWriter = xmlOutputFactory.createXMLStreamWriter(outputStream);
+            XmlGenerator encoder = new XmlGenerator(xmlWriter);
             serialize(encoder, object, type);
-            generator.flush();
+            xmlWriter.close();
+        } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
         }
     }
 
